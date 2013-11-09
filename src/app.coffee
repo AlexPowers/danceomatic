@@ -8,12 +8,12 @@ req.responseType = 'arraybuffer'
 
 setupGL = (c) ->
   renderer = new three.WebGLRenderer()
-  camera = new three.PerspectiveCamera 45, c.width/c.height, 0.1, 100t
+  camera = new three.PerspectiveCamera 45, c.width/c.height, 0.1, 100
   scene = new three.Scene()
   scene.camera = camera
   camera.position.z = 10
   renderer.setSize c.width, c.height
-  renderer.setClearColorHex 0x000000, 1
+  renderer.setClearColor 0x000000, 1
 
   document.body.appendChild renderer.domElement
 
@@ -29,21 +29,33 @@ setupGL = (c) ->
 loader = new three.JSONLoader
 loader.load '/models/stick.js', (geometry) ->
   makeSphere = ->
-    sphere = new three.Mesh geometry,
+    sphere = new three.SkinnedMesh geometry,
       (new three.MeshLambertMaterial color:0xCC0000)
-
+    three.AnimationHandler.add anim for anim in sphere.geometry.animations
     return sphere
+
   sphere = makeSphere()
 
   gl = setupGL({width:500, height:500})
 
   gl.scene.add sphere
-  drawBuffer = (gl, b) ->
-    gl.bindBuffer gl.ARRAY_BUFFER, b
-    gl.vertexAttribPointer gl.vertexPos, b.n, gl.FLOAT, false, 0, 0
-    gl.drawArrays gl.TRIANGLES, 0, b.n
 
-  gl.renderer.render(gl.scene, gl.camera)
+  animation = new three.Animation(
+    sphere, 'ArmatureAction', three.AnimationHandler.CATMULLROM
+    )
+
+
+  console.log animation.data.length
+  render = ->
+    animation.update .01
+
+    sphere.rotation.y = Math.PI * 2 / animation.data.length * animation.currentTime
+    # console.log animation
+    gl.renderer.render gl.scene, gl.camera
+    # gl.renderer.render gl.scene, gl.camera
+    requestAnimationFrame render
+  animation.play()
+  render()
 
 req.onload = ->
   success = (buff) ->
