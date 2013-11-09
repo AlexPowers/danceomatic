@@ -1,8 +1,13 @@
 import pyen
 import sys
 import pprint, json, copy
+import time
+import urllib2
+
 
 en = pyen.Pyen()
+en.trace = False
+
 
 #if len(sys.argv) < 2:
 #	print 'Usage: python playlist.py seed artist name'
@@ -46,9 +51,9 @@ def FindActors(segment):
 	return playerChoices[index]
 
 
-def Choreograph(analysisFile):
-	inputFile = open(analysisFile)
-	analysisDataRaw = inputFile.read()
+def Choreograph(analysisDataRaw):
+#	inputFile = open(analysisFile)
+#	analysisDataRaw = inputFile.read()
 	analysisData = json.loads(analysisDataRaw)
 
 	dance = []
@@ -73,20 +78,41 @@ def Choreograph(analysisFile):
 			dance.append(currentAction)	#copy.deepcopy(currentAction))
 
 	pprint.pprint(dance)
-	
-			
+
+
+def wait_for_analysis(id):
+	while True:
+		response = en.get('track/profile', id=id, bucket=['audio_summary'])
+		if response['track']['status'] <> 'pending':
+			break
+		time.sleep(1)
+
+	analysis_url = response['track']['audio_summary']['analysis_url']
+
+	response = urllib2.urlopen(analysis_url)
+	analysisJSON = response.read()
+
+	#print analysisJSON
+	Choreograph(analysisJSON)		#"/Users/alex/Development/Hack Day 2013/She Gets Remote-analysis.json")
 
 
 
-Choreograph("/Users/alex/Development/Hack Day 2013/She Gets Remote-analysis.json")
+if len(sys.argv) > 2:
+	mp3 = sys.argv[1]
+	type = sys.argv[2]
+
+	f = open(mp3, 'rb')
+	response = en.post('track/upload', track=f, filetype=type)
+	trid = response['track']['id']
+	#print 'track id is', trid
+	wait_for_analysis(trid)
+else:
+	print "usage: python Choreographer.py path-audio audio-type"
 
 
-dance = [
-	{ 'time': 0.2, 'target': [ 1, 3, 5 ], 'action': "XXX" },
-	{ 'time': 0.5, 'target': [ 3, 5 ], 'action': "XXX" }
-	]
 
-#print json.dumps(dance)
+
+
 
 
 """
