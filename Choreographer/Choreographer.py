@@ -51,12 +51,12 @@ def FindActors(segment):
 	return playerChoices[index]
 
 
-def Choreograph(analysisDataRaw):
+def Choreograph(analysisDataRaw, tempo):
 #	inputFile = open(analysisFile)
 #	analysisDataRaw = inputFile.read()
 	analysisData = json.loads(analysisDataRaw)
 
-	dance = []
+	dance = [ ]
 
 	segments = analysisData[u'segments']
 	#pprint.pprint(segments)
@@ -77,7 +77,8 @@ def Choreograph(analysisDataRaw):
 			currentAction['target'] = target
 			dance.append(currentAction)	#copy.deepcopy(currentAction))
 
-	pprint.pprint(dance)
+	results = { 'tempo' : tempo, 'dance': dance }
+	print json.dumps(results)
 
 
 def wait_for_analysis(id):
@@ -87,13 +88,14 @@ def wait_for_analysis(id):
 			break
 		time.sleep(1)
 
+	tempo = response['track']['audio_summary']['tempo']
 	analysis_url = response['track']['audio_summary']['analysis_url']
 
 	response = urllib2.urlopen(analysis_url)
 	analysisJSON = response.read()
 
 	#print analysisJSON
-	Choreograph(analysisJSON)		#"/Users/alex/Development/Hack Day 2013/She Gets Remote-analysis.json")
+	Choreograph(analysisJSON, tempo)		#"/Users/alex/Development/Hack Day 2013/She Gets Remote-analysis.json")
 
 
 
