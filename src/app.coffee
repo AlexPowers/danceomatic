@@ -1,6 +1,5 @@
 "use strict"
-`define(['gl-matrix'], function(mat){return function(){`
-{mat4} = mat
+`define(['three'], function(three){return function(){`
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
 req = new XMLHttpRequest()
@@ -8,81 +7,43 @@ req.open 'GET', '/kafziel.wav', true
 req.responseType = 'arraybuffer'
 
 setupGL = (c) ->
-  gl = c.getContext 'experimental-webgl'
+  renderer = new three.WebGLRenderer()
+  camera = new three.PerspectiveCamera 45, c.width/c.height, 0.1, 100t
+  scene = new three.Scene()
+  scene.camera = camera
+  camera.position.z = 10
+  renderer.setSize c.width, c.height
+  renderer.setClearColorHex 0x000000, 1
 
-  makeShader = (tag, src) ->
-    t = gl.createShader tag
-    gl.shaderSource t, src
-    gl.compileShader t
-    return t
-  frag = makeShader gl.FRAGMENT_SHADER, '''
-  precision mediump float;
-  void main(void) {
-    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-  }
-  '''
-  vert = makeShader gl.VERTEX_SHADER, '''
-  attribute vec3 aVertexPosition;
+  document.body.appendChild renderer.domElement
 
-  uniform mat4 uMVMatrix;
-  uniform mat4 uPMatrix;
+  pointLight = new three.PointLight 0xFFFFFF
+  pointLight.position.x = 10
+  pointLight.position.y = 50
+  pointLight.position.z = 130
+  scene.add pointLight
 
-  void main(void) {
-    gl_Position = vec4(aVertexPosition, 1.0);
-  }
-  '''
-#uPMatrix * uMVMatrix * 
-  prog = gl.createProgram()
-  gl.attachShader prog, vert
-  gl.attachShader prog, frag
-  gl.linkProgram prog
-  gl.useProgram prog
+  return {renderer, scene, camera}
 
-  gl.vertexPos = gl.getAttribLocation prog, 'aVertexPosition'
-  gl.pMatPos = gl.getUniformLocation prog, 'uPMatrix'
-  gl.mvMatPos = gl.getUniformLocation prog, 'uMVMatrix'
 
-  gl.p = mat4.create()
-  gl.mv = mat4.create()
+loader = new three.JSONLoader
+loader.load '/models/stick.js', (geometry) ->
+  makeSphere = ->
+    sphere = new three.Mesh geometry,
+      (new three.MeshLambertMaterial color:0xCC0000)
 
-  [gl.viewportWidth, gl.viewportHeight] = [c.width, c.height]
-  gl.viewport 0, 0, c.width, c.height
+    return sphere
+  sphere = makeSphere()
 
-  gl.clearColor 0,0,0,1
-  gl.enable gl.DEPTH_TEST
-  gl.updateMats = ->
-    gl.uniformMatrix4fv gl.pMatPos, false, gl.p
-    gl.uniformMatrix4fv gl.mvMatPos, false, gl.mv
+  gl = setupGL({width:500, height:500})
 
-  return gl
+  gl.scene.add sphere
+  drawBuffer = (gl, b) ->
+    gl.bindBuffer gl.ARRAY_BUFFER, b
+    gl.vertexAttribPointer gl.vertexPos, b.n, gl.FLOAT, false, 0, 0
+    gl.drawArrays gl.TRIANGLES, 0, b.n
 
-makeStick = (gl) ->
-  stick = gl.createBuffer()
-  gl.bindBuffer gl.ARRAY_BUFFER, stick
-  verts = [100,100,0,
-           0,0,0,
-           200,0,0]
-  gl.bufferData gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW
-  stick.n = verts.length / 3
-  return stick
-
-drawBuffer = (gl, b) ->
-  gl.bindBuffer gl.ARRAY_BUFFER, b
-  gl.vertexAttribPointer gl.vertexPos, b.n, gl.FLOAT, false, 0, 0
-  gl.drawArrays gl.TRIANGLES, 0, b.n
-
-gl = setupGL document.getElementById 'canvas'
-
-stick = makeStick(gl)
-
-drawScene = ->
-  gl.clear gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT
-  mat4.perspective 45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, gl.p
-  mat4.identity gl.mv
-  gl.updateMats()
-  drawBuffer gl, stick
-
-drawScene()
+  gl.renderer.render(gl.scene, gl.camera)
 
 req.onload = ->
   success = (buff) ->
