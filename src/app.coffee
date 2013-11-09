@@ -27,45 +27,41 @@ setupGL = (c) ->
 
 
 loader = new three.JSONLoader
-loader.load '/models/stick.js', (geometry) ->
+loader.load '/models/stick2.js', (geometry, materials) ->
   makeSphere = ->
     sphere = new three.SkinnedMesh geometry,
-      (new three.MeshLambertMaterial color:0xCC0000)
-    three.AnimationHandler.add anim for anim in sphere.geometry.animations
+      (new three.MeshFaceMaterial materials)
+    mat.skinning = true for mat in materials
+    three.AnimationHandler.add anim for anim in geometry.animations
     return sphere
 
   sphere = makeSphere()
 
   gl = setupGL({width:500, height:500})
+  animation = new three.Animation(
+    sphere, 'ArmatureAction'
+    )
 
   gl.scene.add sphere
 
-  animation = new three.Animation(
-    sphere, 'ArmatureAction', three.AnimationHandler.CATMULLROM
-    )
-
-
-  console.log animation.data.length
   render = ->
-    animation.update .01
-
-    sphere.rotation.y = Math.PI * 2 / animation.data.length * animation.currentTime
+    three.AnimationHandler.update .01
     # console.log animation
     gl.renderer.render gl.scene, gl.camera
     # gl.renderer.render gl.scene, gl.camera
     requestAnimationFrame render
-  animation.play()
   render()
+  req.send()
+  req.onload = ->
+    success = (buff) -> setTimeout (->
+      src = audio.createBufferSource()
+      src.buffer = buff
+      src.connect audio.destination
+      animation.play()
+      ), 5000
+      # src.start 0
 
-req.onload = ->
-  success = (buff) ->
-    src = audio.createBufferSource()
-    src.buffer = buff
-    src.connect audio.destination
-    src.start 0
+    audio.decodeAudioData req.response, success
 
-  audio.decodeAudioData req.response, success
-
-req.send()
 
 `};});`
