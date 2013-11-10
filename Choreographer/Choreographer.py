@@ -38,11 +38,11 @@ def DetermineStartingLocations(startingTarget):
 		 if i in offstage:
 		 	# art $ - odd numbered players on right even on left (if starting offstage)
 		 	if (i % 2) == 0:
-		 		results[i] = [ -0.5, (i % 4)  / 4.0 ]
+		 		results[i] = [ -0.5, (i % 12)  / 12.0 ]
 		 	else:
-		 		results[i] = [ 1.5, (i % 4)  / 4.0 ]
+		 		results[i] = [ 1.5, (i % 12)  / 12.0 ]
 		 else:
-		 		results[i] = [ 0.5, (i % 4)  / 4.0 ] # art $ - those who start on stage start right in the middle
+		 		results[i] = [ 0.5, (i % 12)  / 12.0 ] # art $ - those who start on stage start right in the middle
 	return results
 
 

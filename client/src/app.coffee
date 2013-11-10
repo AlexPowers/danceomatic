@@ -81,7 +81,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       @actors = {}
       for target, pos of @data['starting_positions']
         @actors[target] = makeDude (Math.random() * 0xffffff),
-            {x: pos[0] * xspread, y: pos[1] * yspread}
+            {x: pos[0] * xspread, y: pos[1] * yspread * 1.4 - 75 }
         @gl.scene.add @actors[target]
 
       {@dance, @tempo} = @data
@@ -97,7 +97,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
           unless vec?
           	vec =
               x: (datum.moveto.x * xspread - @actors[target].position.x)
-              y: (datum.moveto.y * yspread - @actors[target].position.z)
+              y: (datum.moveto.y * yspread * .4 - @actors[target].position.z)
           @actors[target].target =
             x: vec.x + @actors[target].position.x
             y: vec.y + @actors[target].position.z
