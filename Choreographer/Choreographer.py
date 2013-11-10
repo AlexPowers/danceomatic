@@ -51,7 +51,7 @@ def FindActorsKey(segment, minLoudness, maxLoudness):
 	normalizedLoudness = (loudness_max - minLoudness) / (maxLoudness - minLoudness)
 	#print normalizedLoudness, loudness_max
 	
-	index = int(abs(round(normalizedLoudness)))
+	index = int(abs(round(normalizedLoudness * 10)))
 	#print loudness_max, "\t", (loudness_max + 6) / 6
 	return index
 
