@@ -45,6 +45,23 @@ def FindActorsForKey(index):
 #	print index
 	return playerChoices[index]
 
+def DetermineStartingLocations(startingTarget):
+	results = {}
+	fullCast = set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+	offstage = fullCast.difference(startingTarget)
+	# set up non starting actors split off stage left and right
+	for i in fullCast:
+		 if i in offstage:
+		 	# art $ - odd numbered players on right even on left (if starting offstage)
+		 	if (i % 2) == 0:
+		 		results[i] = [ -0.5, (i % 4)  / 4.0 ]
+		 	else:
+		 		results[i] = [ 1.5, (i % 4)  / 4.0 ]
+		 else:
+		 		results[i] = [ 0.5, (i % 4)  / 4.0 ] # art $ - those who start on stage start right in the middle
+	return results
+
+
 def FindActorsKey(segment):
 	loudness_max = segment[u'loudness_max']
 	index = int(abs(round(loudness_max)))
@@ -92,8 +109,7 @@ def Choreograph(analysisDataRaw, tempo):
 	# art $ - we pick an arbitrary starting set based on the tempo
 	startingSeed = int(abs(round((tempo - 50) / 15)))
 	startingTarget = FindActorsForKey(startingSeed)
-	# $$$ set up non starting actors split off stage left and right
-	startingPos = [ 0.5, 0.5 ] # art $ - those who start on stage start right in the middle
+	startingPos = DetermineStartingLocations(startingTarget)
 
 	# compute the range of the timbres so we can use them to compute position
 	maxTimbres = []
@@ -138,8 +154,9 @@ def Choreograph(analysisDataRaw, tempo):
 		'light_fade_out_end':end_of_fade_out,
 		'light_fade_in_start':0,
 		'light_fade_in_end':light_fade_in,
-		'starting_target':startingTarget
-		}
+		'starting_target':startingTarget,
+		'starting_positions': startingPos
+	}
 	print json.dumps(results)
 	#pprint.pprint(results)
 
