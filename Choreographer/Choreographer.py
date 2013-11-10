@@ -24,7 +24,7 @@ def FindActorsForKey(index):
 		[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
 		[2, 4, 6, 8]
 		]
-#	print index
+	#print index
 	return playerChoices[index]
 
 
@@ -49,7 +49,7 @@ def FindActorsKey(segment, minLoudness, maxLoudness):
 	loudness_max = segment[u'loudness_max']
 
 	normalizedLoudness = (loudness_max - minLoudness) / (maxLoudness - minLoudness)
-	#print normalizedLoudness, loudness_max
+	#print normalizedLoudness, minLoudness, loudness_max
 	
 	index = int(abs(round(normalizedLoudness * 10)))
 	#print loudness_max, "\t", (loudness_max + 6) / 6
@@ -126,8 +126,14 @@ def Choreograph(analysisDataRaw, tempo):
 #	print maxTimbre, minTimbre
 #	print minLoudness, maxLoudness
 #	averageLoudness = loudnessSum / len(segments)
-	# loud = numpy.array(loudnesses)
 #	print numpy.std(loud, axis=0)	$ in progress
+	loud = numpy.array(loudnesses)
+	stdDev = numpy.std(loud, axis=0)
+	mean = numpy.mean(loud, axis=0)
+	#print mean - (stdDev * 2), 
+	minLoudness = mean - (stdDev * 2)
+	maxLoudness = mean + (stdDev * 2)
+#	print minLoudness, maxLoudness
 
 
 	for i in segments:
@@ -160,8 +166,8 @@ def Choreograph(analysisDataRaw, tempo):
 		'light_fade_in_end':light_fade_in,
 		'starting_positions': startingPos
 	}
-	print json.dumps(results)
-	#pprint.pprint(results)
+	#print json.dumps(results)
+	pprint.pprint(results)
 
 
 def wait_for_analysis(id):
