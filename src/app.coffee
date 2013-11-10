@@ -69,20 +69,44 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       for target in datum.target
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
-            {x: Math.random() * xspread * 2 - xspread, y: Math.random() * yspread * 2 - yspread}
+            {x: Math.random() * xspread * 2 - xspread, y: 0}
           gl.scene.add @actors[target]
+        if datum.moveto?
+          unless vec?
+          	vec =
+              x: (datum.moveto.x * xspread - @actors[target].position.x)
+              y: (datum.moveto.y * yspread - @actors[target].position.z)
+          @actors[target].target =
+            x: vec.x + @actors[target].position.x
+            y: vec.y + @actors[target].position.y
+          @actors[target].speed = 0.4 * xspread #datum.speed * xspread
+          
         playAnimation @danceMoves[datum.action % @danceMoves.length], @actors[target], @tempo
     performUntil: (time) ->
       while @dance.length and @dance[0].time < time
         @perform @dance.shift()
+    animPositions: (delta) ->
+      for key, actor of @actors when actor.target?
+        r = actor.speed * delta
+        dx = actor.target.x - actor.position.x
+        dy = actor.target.y - actor.position.z
+        distToTarget = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+        if r > distToTarget
+          delete actor.target
+          continue
+        else
+          actor.position.x += dx * r / distToTarget
+          actor.position.z += dy * r / distToTarget
 
   lastRender = null
   render = ->
     r = audio.currentTime
     if lastRender?
-      three.AnimationHandler.update r - lastRender
+      dr = r - lastRender
+      three.AnimationHandler.update dr
     lastRender = r
     if performance? and songStart?
+      performance.animPositions dr if dr?
       songTime = audio.currentTime - songStart - latency
       performance.performUntil songTime if songTime > 0
 
