@@ -103,8 +103,12 @@ def Choreograph(analysisDataRaw, tempo):
 		#print timbre
 		maxTimbres.append(max(timbre))
 		minTimbres.append(min(timbre))
-	maxTimbre = max(maxTimbres)
-	minTimbre = min(minTimbres)
+#	maxTimbre = max(maxTimbres)
+#	minTimbre = min(minTimbres)
+#	print maxTimbre, minTimbre
+	maxTimbre = sum(maxTimbres) / len(maxTimbres)
+	minTimbre = sum(minTimbres) / len(minTimbres)
+#	print maxTimbre, minTimbre
 
 	for i in segments:
 		confidence = i[u'confidence']
