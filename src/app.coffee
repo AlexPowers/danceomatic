@@ -23,11 +23,12 @@ setupGL = (c) ->
 
   document.body.appendChild renderer.domElement
 
-  pointLight = new three.PointLight 0xFFFFFF
-  pointLight.position.x = 10
-  pointLight.position.y = 50
-  pointLight.position.z = 130
-  scene.add pointLight
+  light = new three.PointLight 0xFFFFFF
+  light.position.x = 10
+  light.position.y = 50
+  light.position.z = 130
+  light.intensity = 0
+  scene.add light
 
   stage = new three.Mesh (new three.PlaneGeometry 2 * xspread, 2*yspread),
     new three.MeshLambertMaterial {color: new three.Color 0xFFFFFF}
@@ -35,7 +36,7 @@ setupGL = (c) ->
   stage.position.y = -5
   scene.add stage
 
-  return {renderer, scene, camera}
+  return {renderer, scene, camera, light}
 
 songStart = null
 performance = null
@@ -63,7 +64,8 @@ loader.load '/models/stick2.js', (geometry, materials) ->
   class DancePerformance
     danceMoves: ['creepy crab', 'two step']
     constructor: (data) ->
-      {@dance, @tempo} = JSON.parse data
+      @data = JSON.parse data
+      {@dance, @tempo} = @data
       @actors = {}
     perform: (datum) ->
       for target in datum.target
@@ -80,12 +82,24 @@ loader.load '/models/stick2.js', (geometry, materials) ->
             x: vec.x + @actors[target].position.x
             y: vec.y + @actors[target].position.y
           @actors[target].speed = 0.4 * xspread #datum.speed * xspread
-          
         playAnimation @danceMoves[datum.action % @danceMoves.length], @actors[target], @tempo
     performUntil: (time) ->
       while @dance.length and @dance[0].time < time
         @perform @dance.shift()
-    animPositions: (delta) ->
+    doLights: (time)->
+      fadeIn = (time - @data['light_fade_in_start']) / (@data['light_fade_in_end'] - @data['light_fade_in_start'])
+      fadeOut = (time - @data['light_fade_out_start']) / (@data['light_fade_out_end'] - @data['light_fade_out_start'])
+      if fadeOut > 0
+        gl.light.intensity = Math.max((1 - fadeOut), 0)
+        return
+      if fadeIn < 1
+        gl.light.intensity = Math.min(fadeIn, 1)
+        return
+      gl.light.intensity = 1
+    update: (time, delta) ->
+      @doLights time
+      @performUntil time
+      # do positions
       for key, actor of @actors when actor.target?
         r = actor.speed * delta
         dx = actor.target.x - actor.position.x
@@ -106,9 +120,8 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       three.AnimationHandler.update dr
     lastRender = r
     if performance? and songStart?
-      performance.animPositions dr if dr?
       songTime = audio.currentTime - songStart - latency
-      performance.performUntil songTime if songTime > 0
+      performance.update songTime, dr if dr?
 
     gl.renderer.render gl.scene, gl.camera
     requestAnimationFrame render
