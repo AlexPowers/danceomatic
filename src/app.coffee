@@ -62,7 +62,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     obj.animation.play()
 
   class DancePerformance
-    danceMoves: ['creepy crab', 'two step']
+    danceMoves: ['gangnam style', 'creepy crab', 'two step', 'Wave']
     constructor: (data) ->
       @data = JSON.parse data
       {@dance, @tempo} = @data
