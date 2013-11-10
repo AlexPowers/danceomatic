@@ -3,6 +3,9 @@ require.config({
 		'three': {
             'exports': 'THREE'
 		},
+        'underscore' : {
+            'exports': '_'
+        }
 	},
 	paths: {
 	}
