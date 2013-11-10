@@ -9,23 +9,6 @@ en = pyen.Pyen()
 en.trace = False
 
 
-#if len(sys.argv) < 2:
-#	print 'Usage: python playlist.py seed artist name'
-#else:
-#	artist_name = ' '.join(sys.argv[1:])
-#    response = en.get('playlist/static', artist=artist_name, type='artist-radio' )
-
-#'SOBBYDX12A8C138D55'
-def Cranky():
-	response = en.get('track/profile', id='TRTLKZV12E5AC92E11', format='json', bucket='audio_summary' )
-
-	pprint.pprint(response)
-#    for i, song in enumerate(response['songs']):
-#    	print song
-        #print "%d %-32.32s %s" % (i, song['artist_name'], song['title'])
-
-#print json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
-
 def FindActorsForKey(index):
 	if index < 0:
 		index = 7
@@ -44,6 +27,7 @@ def FindActorsForKey(index):
 		]
 #	print index
 	return playerChoices[index]
+
 
 def DetermineStartingLocations(startingTarget):
 	results = {}
@@ -67,11 +51,13 @@ def FindActorsKey(segment):
 	index = int(abs(round(loudness_max)))
 	#print loudness_max, "\t", (loudness_max + 6) / 6
 	return index
-	#return FindActorsForKey(index)
+
 
 def FindMovement(segment, index, maxTimbre, minTimbre):
 	# makes movement based one timbre and group of people acting
 	timbre = segment[u'timbre']
+
+	movementQuantizationFactor = 8.0
 
 	targetTimbre = timbre[index % len(timbre)]
 	normalizedTimbre = (targetTimbre - minTimbre) / (maxTimbre - minTimbre)
@@ -85,14 +71,15 @@ def FindMovement(segment, index, maxTimbre, minTimbre):
 	targetTimbre = timbre[(index + 3) % len(timbre)]		# art $ - y coord is a few tembre's over
 	normalizedTimbre = (targetTimbre - minTimbre) / (maxTimbre - minTimbre)
 
-	moveY = normalizedTimbre
+	moveY = int(normalizedTimbre * movementQuantizationFactor) / movementQuantizationFactor
 	speed = 0.1 / 0.25
+
+	moveX = int(moveX * movementQuantizationFactor) / movementQuantizationFactor
 	# first actor in group is reference for coordinates
-	return { 'x': moveX, 'y': moveY, 'speed': speed }
+	return { 'x': moveX, 'y': moveY, 'movement': speed }
+
 
 def Choreograph(analysisDataRaw, tempo):
-#	inputFile = open(analysisFile)
-#	analysisDataRaw = inputFile.read()
 	analysisData = json.loads(analysisDataRaw)
 
 	dance = [ ]
@@ -194,21 +181,3 @@ else:
 
 
 
-
-"""
-
-# what anim, what tempo
-actions:
-moveto - first one bleams
-#movepart: { part:
-
-grouping vs addressing 1 dancer
-	addressing sub parts of person
-	
-array of times
-
-Dancer1:{ { x: 10, y: 10 },		where do they start
-moveTo{ { x: 120, y: 30, duration: 0.2 }
-
-
-"""
