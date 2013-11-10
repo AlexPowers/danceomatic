@@ -13,8 +13,15 @@ app.post '/analyze', (req, res) ->
   tmp.file (err, path, fd) ->
     upload = fs.createWriteStream path
     req.pipe upload
-
+    errored = false
+    req.on 'error', (e) ->
+      res.send 404
+      console.log 'error', e
+      errored = true
     req.on 'end', ->
+      if errored
+        console.log 'error, so no analysis'
+        return
       console.log 'analyzing', path
       analyzer = child.spawn "#{process.cwd()}/server-analyze.sh", [path], 'inherit'
       analyzer.stdout.pipe res

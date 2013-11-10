@@ -1,5 +1,12 @@
 "use strict"
 `define(['three'], function(three){return function(){`
+overlayText = (document.getElementsByClassName 'overlayText')[0]
+
+cancelClick = ->
+  if document.onclick?
+    console.log 'cancel!'
+    document.onclick = null
+
 latency = 0
 xspread = 32
 yspread = 40
@@ -8,6 +15,7 @@ soundfile = '/she.mp3'
 chofile = '/she.cho'
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
+anaReq = null
 
 setupGL = (c) ->
   renderer = new three.WebGLRenderer()
@@ -83,7 +91,6 @@ loader.load '/models/stick2.js', (geometry, materials) ->
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
             {x: Math.random() * xspread * 2 - xspread, y: 0}
-          # @actors[target].name = "#{target}"
           @gl.scene.add @actors[target]
         if datum.moveto?
           unless vec?
@@ -151,9 +158,16 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     e.preventDefault()
   document.ondragover = document.ondragleave = hover
   document.ondrop = (e) ->
+    cancelClick()
+    if anaReq?
+      anaReq.abort()
+      anaReq = null
+      
+    overlayText.textContent = 'Decoding audio file..'
     hover e
     reader = new window.FileReader()
     reader.onload = -> audio.decodeAudioData reader.result, (buff) ->
+      overlayText.textContent = 'Creating choreography (this will take a few minutes)...'
       src = audio.createBufferSource()
       src.buffer = buff
       src.connect audio.destination
@@ -163,9 +177,16 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       anaReq.open "POST", "/analyze", true
       anaReq.responseType = 'json'
       anaReq.onload = ->
-        performance?.remove()
-        performance = new DancePerformance anaReq.response, src
-        delete anaReq.onload
+        overlayText.textContent = 'Choreography complete! Click to play!'
+        document.onclick = ->
+          overlayText.textContent = ''
+          performance?.remove()
+          performance = new DancePerformance anaReq.response, src
+          anaReq = null
+          delete anaReq.onload
+          cancelClick()
+      anaReq.onerror = ->
+        overlayText.textContent = 'Oops! Choreography failed! Try Again!'
       anaReq.send reader.result
       delete reader.onload
     reader.readAsArrayBuffer e.dataTransfer.files[0]
@@ -182,12 +203,16 @@ loader.load '/models/stick2.js', (geometry, materials) ->
 
       danceReq.send()
       danceReq.onload = ->
-        src = audio.createBufferSource()
-        src.buffer = buff
-        src.connect audio.destination
+        overlayText.textContent = 'Click to Play Demo, or Drag your own file in!'
+        document.onclick = ->
+          overlayText.textContent = ''
 
-        # start in 100ms!
-        performance?.remove()
-        performance = new DancePerformance danceReq.response, src
+          src = audio.createBufferSource()
+          src.buffer = buff
+          src.connect audio.destination
 
+          # start in 100ms!
+          performance?.remove()
+          performance = new DancePerformance danceReq.response, src
+          cancelClick()
 `};});`
