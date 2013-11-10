@@ -3,7 +3,7 @@ import sys
 import pprint, json, copy
 import time
 import urllib2
-
+import numpy
 
 en = pyen.Pyen()
 en.trace = False
@@ -46,9 +46,13 @@ def DetermineStartingLocations(startingTarget):
 	return results
 
 
-def FindActorsKey(segment):
+def FindActorsKey(segment, minLoudness, maxLoudness):
 	loudness_max = segment[u'loudness_max']
-	index = int(abs(round(loudness_max)))
+
+	normalizedLoudness = (loudness_max - minLoudness) / (maxLoudness - minLoudness)
+	#print normalizedLoudness, loudness_max
+	
+	index = int(abs(round(normalizedLoudness)))
 	#print loudness_max, "\t", (loudness_max + 6) / 6
 	return index
 
@@ -101,8 +105,17 @@ def Choreograph(analysisDataRaw, tempo):
 	# compute the range of the timbres so we can use them to compute position
 	maxTimbres = []
 	minTimbres = []
+	maxLoudness = -100
+	minLoudness = 100
+#	loudnessSum = 0
+	loudnesses = []
 	for i in segments:
 		timbre = i[u'timbre']
+		loudness_max = i[u'loudness_max']
+		loudnesses.append(loudness_max)
+		maxLoudness = max(loudness_max, maxLoudness)
+		minLoudness = min(loudness_max, minLoudness)
+		#loudnessSum = loudnessSum + loudness_max
 		#print timbre
 		maxTimbres.append(max(timbre))
 		minTimbres.append(min(timbre))
@@ -112,18 +125,23 @@ def Choreograph(analysisDataRaw, tempo):
 	maxTimbre = sum(maxTimbres) / len(maxTimbres)
 	minTimbre = sum(minTimbres) / len(minTimbres)
 #	print maxTimbre, minTimbre
+#	print minLoudness, maxLoudness
+#	averageLoudness = loudnessSum / len(segments)
+	loud = numpy.array(loudnesses)
+#	print numpy.std(loud, axis=0)	$ in progress
+
 
 	for i in segments:
 		confidence = i[u'confidence']
 		if confidence > 0.5:		# art $ - which should segments to follow?
 
 			start = i[u'start']
-			if not found_light_fade_in:
+			if not found_light_fade_in and start > 1.5:
 				found_light_fade_in = True
 				light_fade_in = start	# art $ - lights end fade in at first move after opening
 
 			currentAction = {}
-			index = FindActorsKey(i)
+			index = FindActorsKey(i, minLoudness, maxLoudness)
 			target = FindActorsForKey(index)
 			movement = FindMovement(i, index, maxTimbre, minTimbre)
 
@@ -141,7 +159,6 @@ def Choreograph(analysisDataRaw, tempo):
 		'light_fade_out_end':end_of_fade_out,
 		'light_fade_in_start':0,
 		'light_fade_in_end':light_fade_in,
-		'starting_target':startingTarget,
 		'starting_positions': startingPos
 	}
 	print json.dumps(results)
