@@ -42,7 +42,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     dude.position.z = pos.y
     return dude
 
-  gl = setupGL({width:500, height:500})
+  gl = setupGL({width:1000, height:500})
 
   playAnimation = (anim, obj, tempo) ->
     if obj.animation?
@@ -59,7 +59,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       for target in datum.target
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
-            {x: Math.random() * 40 - 20, y: Math.random() * 40 - 20}
+            {x: Math.random() * 120 - 60, y: Math.random() * 40 - 20}
           gl.scene.add @actors[target]
         playAnimation 'Super Wave', @actors[target], @tempo
     performUntil: (time) ->
