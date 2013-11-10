@@ -1,9 +1,11 @@
 "use strict"
 `define(['three', 'underscore'], function(three, _){return function(){`
+latency = 0
+
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
 req = new XMLHttpRequest()
-req.open 'GET', '/kafziel.wav', true
+req.open 'GET', '/Choreographer/she.wav', true
 req.responseType = 'arraybuffer'
 
 setupGL = (c) ->
@@ -26,7 +28,8 @@ setupGL = (c) ->
 
   return {renderer, scene, camera}
 
-tempo = 100
+songStart = null
+performance = null
 
 loader = new three.JSONLoader
 loader.load '/models/stick2.js', (geometry, materials) ->
@@ -41,41 +44,56 @@ loader.load '/models/stick2.js', (geometry, materials) ->
 
   gl = setupGL({width:500, height:500})
 
-  sphere = makeDude 0xff00ff, {x: 10, y: 10}
-  gl.scene.add sphere
-  cube = makeDude 0x00ff00, {x:-10, y:10}
-  gl.scene.add cube
-
-  playAnimation = (anim, obj) ->
+  playAnimation = (anim, obj, tempo) ->
     if obj.animation?
       obj.animation.stop()
     obj.animation = new three.Animation obj, anim
     obj.animation.timeScale = tempo / 120
     obj.animation.play()
 
-  # console.log animation.timeScale
-  # animation.timeScale = 12
+  class DancePerformance
+    constructor: (data) ->
+      {@dance, @tempo} = JSON.parse data
+      @actors = {}
+    perform: (datum) ->
+      for target in datum.target
+        unless @actors[target]?
+          @actors[target] = makeDude (Math.random() * 0xffffff),
+            {x: Math.random() * 40 - 20, y: Math.random() * 40 - 20}
+          gl.scene.add @actors[target]
+        playAnimation 'Super Wave', @actors[target], @tempo
+    performUntil: (time) ->
+      while @dance.length and @dance[0].time < time
+        @perform @dance.shift()
+
   lastRender = null
   render = ->
     r = audio.currentTime
     if lastRender?
       three.AnimationHandler.update r - lastRender
     lastRender = r
+    if performance? and songStart?
+      songTime = audio.currentTime - songStart - latency
+      performance.performUntil songTime if songTime > 0
+
     gl.renderer.render gl.scene, gl.camera
     requestAnimationFrame render
   render()
   req.send()
   req.onload = ->
-    success = (buff) ->
-      src = audio.createBufferSource()
-      src.buffer = buff
-      src.connect audio.destination
-      setTimeout (->
-        playAnimation 'Super Wave', sphere
-        ), 1000
-      # src.start 0
+    audio.decodeAudioData req.response, (buff) ->
+      danceReq = new XMLHttpRequest()
+      danceReq.open 'GET', '/Choreographer/she.cho', true
+      danceReq.responseType = 'json'
+      danceReq.send()
+      danceReq.onload = ->
+        performance = new DancePerformance danceReq.response
+        src = audio.createBufferSource()
+        src.buffer = buff
+        src.connect audio.destination
 
-    audio.decodeAudioData req.response, success
-
+        # start in 100ms!
+        songStart = audio.currentTime + .1
+        src.start songStart
 
 `};});`
