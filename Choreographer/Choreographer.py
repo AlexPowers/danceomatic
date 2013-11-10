@@ -26,12 +26,7 @@ def Cranky():
 
 #print json.dumps(['foo', {'bar': ('baz', None, 1.0, 2)}])
 
-
-
-def FindActors(segment):
-	loudness_max = segment[u'loudness_max']
-	index = int(abs(round(loudness_max)))
-	#print loudness_max, "\t", (loudness_max + 6) / 6
+def FindActorsForKey(index):
 	if index < 0:
 		index = 7
 	if index > 6:
@@ -50,6 +45,33 @@ def FindActors(segment):
 #	print index
 	return playerChoices[index]
 
+def FindActorsKey(segment):
+	loudness_max = segment[u'loudness_max']
+	index = int(abs(round(loudness_max)))
+	#print loudness_max, "\t", (loudness_max + 6) / 6
+	return index
+	#return FindActorsForKey(index)
+
+def FindMovement(segment, index, maxTimbre, minTimbre):
+	# makes movement based one timbre and group of people acting
+	timbre = segment[u'timbre']
+
+	targetTimbre = timbre[index % len(timbre)]
+	normalizedTimbre = (targetTimbre - minTimbre) / (maxTimbre - minTimbre)
+	#print normalizedTimbre, targetTimbre, index, index % len(timbre)
+
+#	stageRangeX = [-0.5, 1.5]	# the area of the stage on x includes offstage left and right
+
+	moveX = (normalizedTimbre * 2) - 0.5
+
+#	stageRangeY = [ 0, 1.0 ]
+	targetTimbre = timbre[(index + 3) % len(timbre)]		# art $ - y coord is a few tembre's over
+	normalizedTimbre = (targetTimbre - minTimbre) / (maxTimbre - minTimbre)
+
+	moveY = normalizedTimbre
+	speed = 0.1 / 0.25
+	# first actor in group is reference for coordinates
+	return { 'x': moveX, 'y': moveY, 'speed': speed }
 
 def Choreograph(analysisDataRaw, tempo):
 #	inputFile = open(analysisFile)
@@ -59,15 +81,44 @@ def Choreograph(analysisDataRaw, tempo):
 	dance = [ ]
 
 	segments = analysisData[u'segments']
-	#pprint.pprint(segments)
+	#pprint.pprint(analysisData)
+
+	#determine light fade in and out
+	found_light_fade_in = False
+	start_of_fade_out = analysisData[u'track'][u'start_of_fade_out']
+	end_of_fade_out = analysisData[u'track'][u'duration']
+	
+	# make one starting gesture
+	# art $ - we pick an arbitrary starting set based on the tempo
+	startingSeed = int(abs(round((tempo - 50) / 15)))
+	startingTarget = FindActorsForKey(startingSeed)
+	# $$$ set up non starting actors split off stage left and right
+	startingPos = [ 0.5, 0.5 ] # art $ - those who start on stage start right in the middle
+
+	# compute the range of the timbres so we can use them to compute position
+	maxTimbres = []
+	minTimbres = []
+	for i in segments:
+		timbre = i[u'timbre']
+		#print timbre
+		maxTimbres.append(max(timbre))
+		minTimbres.append(min(timbre))
+	maxTimbre = max(maxTimbres)
+	minTimbre = min(minTimbres)
 
 	for i in segments:
 		confidence = i[u'confidence']
 		if confidence > 0.5:		# art $ - which should segments to follow?
-			#pprint.pprint(i)
+
 			start = i[u'start']
+			if not found_light_fade_in:
+				found_light_fade_in = True
+				light_fade_in = start	# art $ - lights end fade in at first move after opening
+
 			currentAction = {}
-			target = FindActors(i)
+			index = FindActorsKey(i)
+			target = FindActorsForKey(index)
+			movement = FindMovement(i, index, maxTimbre, minTimbre)
 
 			pitches = i[u'pitches']
 			action = pitches.index(1.0)
@@ -75,10 +126,18 @@ def Choreograph(analysisDataRaw, tempo):
 			currentAction['action'] = action
 			currentAction['time'] = start
 			currentAction['target'] = target
+			currentAction['moveto'] = movement
 			dance.append(currentAction)	#copy.deepcopy(currentAction))
 
-	results = { 'tempo' : tempo, 'dance': dance }
+	results = { 'tempo' : tempo, 'dance': dance,
+		'light_fade_out_start':start_of_fade_out,
+		'light_fade_out_end':end_of_fade_out,
+		'light_fade_in_start':0,
+		'light_fade_in_end':light_fade_in,
+		'starting_target':startingTarget
+		}
 	print json.dumps(results)
+	#pprint.pprint(results)
 
 
 def wait_for_analysis(id):
@@ -110,8 +169,6 @@ if len(sys.argv) > 2:
 	wait_for_analysis(trid)
 else:
 	print "usage: python Choreographer.py path-audio audio-type"
-
-
 
 
 
