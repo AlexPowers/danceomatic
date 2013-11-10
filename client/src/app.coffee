@@ -1,16 +1,13 @@
 "use strict"
-`define(['three', 'underscore'], function(three, _){return function(){`
+`define(['three'], function(three){return function(){`
 latency = 0
 xspread = 32
 yspread = 40
 
-soundfile = '/Choreographer/bh.mp3'
-chofile = '/Choreographer/bh.cho'
+soundfile = '/Choreographer/she.wav'
+chofile = '/Choreographer/she.cho'
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
-req = new XMLHttpRequest()
-req.open 'GET', soundfile, true
-req.responseType = 'arraybuffer'
 
 setupGL = (c) ->
   renderer = new three.WebGLRenderer()
@@ -54,29 +51,36 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     dude.position.z = pos.y
     return dude
 
-  gl = setupGL({width:1000, height:500})
 
   playAnimation = (anim, offset, obj, tempo) ->
-    if obj.animation?
-      obj.animation.stop()
+    obj.animation?.stop()
     obj.animation = new three.Animation obj, anim
     obj.animation.timeScale = tempo / 120
     obj.animation.currentTime += offset * 0.5 * tempo / 120
     obj.animation.play()
+  performance = null
+
+  gl = setupGL({width:1000, height:500})
 
   class DancePerformance
     danceMoves: ['gangnam style', 'creepy crab', 'two step', 'Wave']
-    constructor: (data) ->
+    constructor: (data, @src) ->
+      @songStart = audio.currentTime + .1
+      @src.start @songStart
+
+      @gl = gl
+
       @data = JSON.parse data
       {@dance, @tempo} = @data
-      console.log @tempo
       @actors = {}
+      @render()
     perform: (datum) ->
       for target in datum.target
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
             {x: Math.random() * xspread * 2 - xspread, y: 0}
-          gl.scene.add @actors[target]
+          # @actors[target].name = "#{target}"
+          @gl.scene.add @actors[target]
         if datum.moveto?
           unless vec?
           	vec =
@@ -95,12 +99,12 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       fadeIn = (time - @data['light_fade_in_start']) / (@data['light_fade_in_end'] - @data['light_fade_in_start'])
       fadeOut = (time - @data['light_fade_out_start']) / (@data['light_fade_out_end'] - @data['light_fade_out_start'])
       if fadeOut > 0
-        gl.light.intensity = Math.max((1 - fadeOut), 0)
+        @gl.light.intensity = Math.max((1 - fadeOut), 0)
         return
       if fadeIn < 1
-        gl.light.intensity = Math.min(fadeIn, 1)
+        @gl.light.intensity = Math.min(fadeIn, 1)
         return
-      gl.light.intensity = 1
+      @gl.light.intensity = 1
     update: (time, delta) ->
       @doLights time
       @performUntil time
@@ -116,36 +120,70 @@ loader.load '/models/stick2.js', (geometry, materials) ->
         else
           actor.position.x += dx * r / distToTarget
           actor.position.z += dy * r / distToTarget
+    lastRender: null
+    render: ->
+      return if @dead
+      r = audio.currentTime
+      if @lastRender?
+        dr = r - @lastRender
+        three.AnimationHandler.update dr
+      @lastRender = r
+      songTime = audio.currentTime - @songStart - latency
+      @update songTime, dr if dr?
 
-  lastRender = null
-  render = ->
-    r = audio.currentTime
-    if lastRender?
-      dr = r - lastRender
-      three.AnimationHandler.update dr
-    lastRender = r
-    if performance? and songStart?
-      songTime = audio.currentTime - songStart - latency
-      performance.update songTime, dr if dr?
+      @gl.renderer.render @gl.scene, @gl.camera
+      requestAnimationFrame (=> @render())
+    remove: ->
+      for key, actor of @actors
+        if actor.animation?
+          actor.animation.stop()
+          three.AnimationHandler.removeFromUpdate actor.animation
+        @gl.scene.remove actor
+      @src.stop(0)
+      @dead = true
 
-    gl.renderer.render gl.scene, gl.camera
-    requestAnimationFrame render
-  render()
+  hover = (e) ->
+    e.stopPropagation()
+    e.preventDefault()
+  document.ondragover = document.ondragleave = hover
+  document.ondrop = (e) ->
+    hover e
+    reader = new window.FileReader()
+    reader.onload = -> audio.decodeAudioData reader.result, (buff) ->
+      src = audio.createBufferSource()
+      src.buffer = buff
+      src.connect audio.destination
+
+      # okay, we got a buffer, now we have to analyze it!
+      anaReq = new XMLHttpRequest()
+      anaReq.open "POST", "/analyze", true
+      anaReq.responseType = 'json'
+      anaReq.onload = ->
+        performance?.remove()
+        performance = new DancePerformance anaReq.response, src
+        delete anaReq.onload
+      anaReq.send reader.result
+      delete reader.onload
+    reader.readAsArrayBuffer e.dataTransfer.files[0]
+
+  req = new XMLHttpRequest()
+  req.open 'GET', soundfile, true
+  req.responseType = 'arraybuffer'
+
   req.send()
   req.onload = ->
     audio.decodeAudioData req.response, (buff) ->
       danceReq = new XMLHttpRequest()
       danceReq.open 'GET', chofile, true
-      danceReq.responseType = 'json'
+
       danceReq.send()
       danceReq.onload = ->
-        performance = new DancePerformance danceReq.response
         src = audio.createBufferSource()
         src.buffer = buff
         src.connect audio.destination
 
         # start in 100ms!
-        songStart = audio.currentTime + .1
-        src.start songStart
+        performance?.remove()
+        performance = new DancePerformance danceReq.response, src
 
 `};});`

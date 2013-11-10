@@ -9,7 +9,8 @@
   "devDependencies": {
     "requirejs" : "*",
     "coffee-script" : "*",
-    "express" : "*"
+    "express" : "*",
+    "tmp": "*"
   },
   "directories": {},
   "engines": {

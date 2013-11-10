@@ -2,10 +2,7 @@ require.config({
 	shim: {
 		'three': {
             'exports': 'THREE'
-		},
-        'underscore' : {
-            'exports': '_'
-        }
+		}
 	},
 	paths: {
 	}
