@@ -16,8 +16,10 @@ app.post '/analyze', (req, res) ->
 
     req.on 'end', ->
       console.log 'analyzing', path
-      analyzer = child.spawn "#{process.cwd()}/server-analyze.sh", [path], {stdio: 'pipe'}
+      analyzer = child.spawn "#{process.cwd()}/server-analyze.sh", [path], 'inherit'
       analyzer.stdout.pipe res
+      analyzer.on 'exit', (code) ->
+        console.log 'done', code
 
 
 app.use express.static(
