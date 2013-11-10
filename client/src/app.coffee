@@ -87,6 +87,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       {@dance, @tempo} = @data
       @render()
     perform: (datum) ->
+      vec = null
       for target in datum.target
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
@@ -99,7 +100,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
               y: (datum.moveto.y * yspread - @actors[target].position.z)
           @actors[target].target =
             x: vec.x + @actors[target].position.x
-            y: vec.y + @actors[target].position.y
+            y: vec.y + @actors[target].position.z
           @actors[target].speed = 0.4 * xspread #datum.speed * xspread
         anim = datum.action % @danceMoves.length
         playAnimation @danceMoves[anim], Math.floor(datum.action / @danceMoves.length), @actors[target], @tempo

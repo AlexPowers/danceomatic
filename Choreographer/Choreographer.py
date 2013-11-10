@@ -3,6 +3,7 @@ import sys
 import pprint, json, copy
 import time
 import urllib2
+import numpy
 
 en = pyen.Pyen()
 en.trace = False
@@ -166,8 +167,8 @@ def Choreograph(analysisDataRaw, tempo):
 		'light_fade_in_end':light_fade_in,
 		'starting_positions': startingPos
 	}
-	#print json.dumps(results)
-	pprint.pprint(results)
+	print json.dumps(results)
+	#pprint.pprint(results)
 
 
 def wait_for_analysis(id):

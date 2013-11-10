@@ -5,6 +5,8 @@ It's an automated Choreography generator!
 Requirements:
 - python
 - bash
+- pyen, the echonest python API
+- numpy
 - exported ECHO_NEST_API_KEY (for the echo nest api)
 - nodejs
 
@@ -15,4 +17,4 @@ created by Alex Powers and Russell McClellan
 
 all code written for this project licensed under the MIT license
 
-demo song by Slynk
+demo song by Dream Logic
