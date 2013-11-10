@@ -1,6 +1,8 @@
 "use strict"
 `define(['three', 'underscore'], function(three, _){return function(){`
 latency = 0
+xspread = 32
+yspread = 40
 
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
@@ -10,11 +12,14 @@ req.responseType = 'arraybuffer'
 
 setupGL = (c) ->
   renderer = new three.WebGLRenderer()
-  camera = new three.PerspectiveCamera 45, c.width/c.height, 0.1, 1000
+  camera = new three.PerspectiveCamera 30, c.width/c.height, .1, 200
   scene = new three.Scene()
   scene.camera = camera
   camera.position.z = 100
-  camera.position.y = 10
+  camera.position.y = 20
+  camera.lookAt new three.Vector3 0,0,0
+  document.onmousewheel = (e) ->
+    console.log e
   renderer.setSize c.width, c.height
   renderer.setClearColor 0x000000, 1
 
@@ -25,6 +30,12 @@ setupGL = (c) ->
   pointLight.position.y = 50
   pointLight.position.z = 130
   scene.add pointLight
+
+  stage = new three.Mesh (new three.PlaneGeometry 2 * xspread, 2*yspread),
+    new three.MeshLambertMaterial {color: new three.Color 0xFFFFFF}
+  stage.rotation.x = -Math.PI / 2
+  stage.position.y = -5
+  scene.add stage
 
   return {renderer, scene, camera}
 
@@ -52,6 +63,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     obj.animation.play()
 
   class DancePerformance
+    danceMoves: ['Super Wave']
     constructor: (data) ->
       {@dance, @tempo} = JSON.parse data
       @actors = {}
@@ -59,9 +71,9 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       for target in datum.target
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
-            {x: Math.random() * 120 - 60, y: Math.random() * 40 - 20}
+            {x: Math.random() * xspread * 2 - xspread, y: Math.random() * yspread * 2 - yspread}
           gl.scene.add @actors[target]
-        playAnimation 'Super Wave', @actors[target], @tempo
+        playAnimation @danceMoves[datum.action % @danceMoves.length], @actors[target], @tempo
     performUntil: (time) ->
       while @dance.length and @dance[0].time < time
         @perform @dance.shift()
