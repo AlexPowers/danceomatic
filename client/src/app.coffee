@@ -184,7 +184,6 @@ loader.load '/models/stick2.js', (geometry, materials) ->
           performance?.remove()
           performance = new DancePerformance anaReq.response, src
           anaReq = null
-          delete anaReq.onload
           cancelClick()
       anaReq.onerror = ->
         overlayText.textContent = 'Oops! Choreography failed! Try Again!'
