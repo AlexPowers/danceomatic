@@ -4,8 +4,8 @@ latency = 0
 xspread = 32
 yspread = 40
 
-soundfile = '/Choreographer/she.wav'
-chofile = '/Choreographer/she.cho'
+soundfile = '/she.mp3'
+chofile = '/she.cho'
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
 
@@ -51,7 +51,6 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     dude.position.z = pos.y
     return dude
 
-
   playAnimation = (anim, offset, obj, tempo) ->
     obj.animation?.stop()
     obj.animation = new three.Animation obj, anim
@@ -71,8 +70,13 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       @gl = gl
 
       @data = JSON.parse data
-      {@dance, @tempo} = @data
       @actors = {}
+      for target, pos of @data['starting_positions']
+        @actors[target] = makeDude (Math.random() * 0xffffff),
+            {x: pos[0] * xspread, y: pos[1] * yspread}
+        @gl.scene.add @actors[target]
+
+      {@dance, @tempo} = @data
       @render()
     perform: (datum) ->
       for target in datum.target
