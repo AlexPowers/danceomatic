@@ -1,0 +1,23 @@
+{
+  "name": "choreographer",
+  "version": "0.0.0",
+  "author": {
+    "name": "choreographer"
+  },
+  "description": "Auto choreographer",
+  "dependencies" : {},
+  "devDependencies": {
+    "requirejs" : "*",
+    "coffee-script" : "*",
+    "express" : "*"
+  },
+  "directories": {},
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "scripts": {
+    "start": "coffee server.coffee",
+    "debug": "coffee server.coffee debug",
+    "build": "cd client; ./build.sh"
+  }
+}

@@ -4,10 +4,12 @@ latency = 0
 xspread = 32
 yspread = 40
 
+soundfile = '/Choreographer/bh.mp3'
+chofile = '/Choreographer/bh.cho'
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
 req = new XMLHttpRequest()
-req.open 'GET', '/Choreographer/she.wav', true
+req.open 'GET', soundfile, true
 req.responseType = 'arraybuffer'
 
 setupGL = (c) ->
@@ -54,11 +56,12 @@ loader.load '/models/stick2.js', (geometry, materials) ->
 
   gl = setupGL({width:1000, height:500})
 
-  playAnimation = (anim, obj, tempo) ->
+  playAnimation = (anim, offset, obj, tempo) ->
     if obj.animation?
       obj.animation.stop()
     obj.animation = new three.Animation obj, anim
     obj.animation.timeScale = tempo / 120
+    obj.animation.currentTime += offset * 0.5 * tempo / 120
     obj.animation.play()
 
   class DancePerformance
@@ -66,6 +69,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     constructor: (data) ->
       @data = JSON.parse data
       {@dance, @tempo} = @data
+      console.log @tempo
       @actors = {}
     perform: (datum) ->
       for target in datum.target
@@ -82,7 +86,8 @@ loader.load '/models/stick2.js', (geometry, materials) ->
             x: vec.x + @actors[target].position.x
             y: vec.y + @actors[target].position.y
           @actors[target].speed = 0.4 * xspread #datum.speed * xspread
-        playAnimation @danceMoves[datum.action % @danceMoves.length], @actors[target], @tempo
+        anim = datum.action % @danceMoves.length
+        playAnimation @danceMoves[anim], Math.floor(datum.action / @danceMoves.length), @actors[target], @tempo
     performUntil: (time) ->
       while @dance.length and @dance[0].time < time
         @perform @dance.shift()
@@ -130,7 +135,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
   req.onload = ->
     audio.decodeAudioData req.response, (buff) ->
       danceReq = new XMLHttpRequest()
-      danceReq.open 'GET', '/Choreographer/she.cho', true
+      danceReq.open 'GET', chofile, true
       danceReq.responseType = 'json'
       danceReq.send()
       danceReq.onload = ->
