@@ -5,7 +5,6 @@ renderElement = (document.getElementsByClassName 'render')[0]
 
 cancelClick = ->
   if document.onclick?
-    console.log 'cancel!'
     document.onclick = null
 
 latency = 0
