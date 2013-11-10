@@ -18,8 +18,6 @@ setupGL = (c) ->
   camera.position.z = 100
   camera.position.y = 20
   camera.lookAt new three.Vector3 0,0,0
-  document.onmousewheel = (e) ->
-    console.log e
   renderer.setSize c.width, c.height
   renderer.setClearColor 0x000000, 1
 
@@ -63,7 +61,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     obj.animation.play()
 
   class DancePerformance
-    danceMoves: ['Super Wave']
+    danceMoves: ['creepy crab', 'two step']
     constructor: (data) ->
       {@dance, @tempo} = JSON.parse data
       @actors = {}
