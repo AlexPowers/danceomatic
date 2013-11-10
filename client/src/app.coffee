@@ -11,7 +11,7 @@ audio = new (window.AudioContext ? window.webkitAudioContext)()
 
 setupGL = (c) ->
   renderer = new three.WebGLRenderer()
-  camera = new three.PerspectiveCamera 30, c.width/c.height, .1, 200
+  camera = new three.PerspectiveCamera 15, c.width/c.height, .1, 200
   scene = new three.Scene()
   scene.camera = camera
   camera.position.z = 100
