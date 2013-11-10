@@ -1,6 +1,7 @@
 "use strict"
 `define(['three'], function(three){return function(){`
 overlayText = (document.getElementsByClassName 'overlayText')[0]
+renderElement = (document.getElementsByClassName 'render')[0]
 
 cancelClick = ->
   if document.onclick?
@@ -28,7 +29,7 @@ setupGL = (c) ->
   renderer.setSize c.width, c.height
   renderer.setClearColor 0x000000, 1
 
-  document.body.appendChild renderer.domElement
+  renderElement.appendChild renderer.domElement
 
   light = new three.PointLight 0xFFFFFF
   light.position.x = 10

@@ -3,7 +3,6 @@ import sys
 import pprint, json, copy
 import time
 import urllib2
-import numpy
 
 en = pyen.Pyen()
 en.trace = False
@@ -127,7 +126,7 @@ def Choreograph(analysisDataRaw, tempo):
 #	print maxTimbre, minTimbre
 #	print minLoudness, maxLoudness
 #	averageLoudness = loudnessSum / len(segments)
-	loud = numpy.array(loudnesses)
+	# loud = numpy.array(loudnesses)
 #	print numpy.std(loud, axis=0)	$ in progress
 
 
