@@ -23,11 +23,12 @@ setupGL = (c) ->
 
   document.body.appendChild renderer.domElement
 
-  pointLight = new three.PointLight 0xFFFFFF
-  pointLight.position.x = 10
-  pointLight.position.y = 50
-  pointLight.position.z = 130
-  scene.add pointLight
+  light = new three.PointLight 0xFFFFFF
+  light.position.x = 10
+  light.position.y = 50
+  light.position.z = 130
+  light.intensity = 0
+  scene.add light
 
   stage = new three.Mesh (new three.PlaneGeometry 2 * xspread, 2*yspread),
     new three.MeshLambertMaterial {color: new three.Color 0xFFFFFF}
@@ -35,7 +36,7 @@ setupGL = (c) ->
   stage.position.y = -5
   scene.add stage
 
-  return {renderer, scene, camera}
+  return {renderer, scene, camera, light}
 
 songStart = null
 performance = null
@@ -61,30 +62,66 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     obj.animation.play()
 
   class DancePerformance
-    danceMoves: ['creepy crab', 'two step']
+    danceMoves: ['gangnam style', 'creepy crab', 'two step', 'Wave']
     constructor: (data) ->
-      {@dance, @tempo} = JSON.parse data
+      @data = JSON.parse data
+      {@dance, @tempo} = @data
       @actors = {}
     perform: (datum) ->
       for target in datum.target
         unless @actors[target]?
           @actors[target] = makeDude (Math.random() * 0xffffff),
-            {x: Math.random() * xspread * 2 - xspread, y: Math.random() * yspread * 2 - yspread}
+            {x: Math.random() * xspread * 2 - xspread, y: 0}
           gl.scene.add @actors[target]
+        if datum.moveto?
+          unless vec?
+          	vec =
+              x: (datum.moveto.x * xspread - @actors[target].position.x)
+              y: (datum.moveto.y * yspread - @actors[target].position.z)
+          @actors[target].target =
+            x: vec.x + @actors[target].position.x
+            y: vec.y + @actors[target].position.y
+          @actors[target].speed = 0.4 * xspread #datum.speed * xspread
         playAnimation @danceMoves[datum.action % @danceMoves.length], @actors[target], @tempo
     performUntil: (time) ->
       while @dance.length and @dance[0].time < time
         @perform @dance.shift()
+    doLights: (time)->
+      fadeIn = (time - @data['light_fade_in_start']) / (@data['light_fade_in_end'] - @data['light_fade_in_start'])
+      fadeOut = (time - @data['light_fade_out_start']) / (@data['light_fade_out_end'] - @data['light_fade_out_start'])
+      if fadeOut > 0
+        gl.light.intensity = Math.max((1 - fadeOut), 0)
+        return
+      if fadeIn < 1
+        gl.light.intensity = Math.min(fadeIn, 1)
+        return
+      gl.light.intensity = 1
+    update: (time, delta) ->
+      @doLights time
+      @performUntil time
+      # do positions
+      for key, actor of @actors when actor.target?
+        r = actor.speed * delta
+        dx = actor.target.x - actor.position.x
+        dy = actor.target.y - actor.position.z
+        distToTarget = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2))
+        if r > distToTarget
+          delete actor.target
+          continue
+        else
+          actor.position.x += dx * r / distToTarget
+          actor.position.z += dy * r / distToTarget
 
   lastRender = null
   render = ->
     r = audio.currentTime
     if lastRender?
-      three.AnimationHandler.update r - lastRender
+      dr = r - lastRender
+      three.AnimationHandler.update dr
     lastRender = r
     if performance? and songStart?
       songTime = audio.currentTime - songStart - latency
-      performance.performUntil songTime if songTime > 0
+      performance.update songTime, dr if dr?
 
     gl.renderer.render gl.scene, gl.camera
     requestAnimationFrame render

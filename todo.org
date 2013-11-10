@@ -1,1 +1,12 @@
-movement: relative to first actor, go to a point at speed - then stop
+no glitching between dances!
+
+dancimations:
+cabbage patch
+travolta disco
+worm
+pop/lock/robot
+head spin
+pelvic thrust
+twerking
+shuffle
+skanking
