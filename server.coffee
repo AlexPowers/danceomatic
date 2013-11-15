@@ -36,4 +36,4 @@ app.use express.static(
     "#{process.cwd()}/client/build"
 )
 
-app.listen if debug then 8080 else 80
+app.listen if debug then 8080 else 3000

@@ -1,4 +1,25 @@
 body {
 text-align: center;
 background: #000000;
+color: white;
+font-family: futura;
+text-align: 0;
+}
+.overlay {
+position: fixed;
+left: 0;
+right: 0;
+top: 0px;
+height: 500px;
+}
+.overlayText {
+vertical-align: center;
+margin: auto;
+margin-top: 250px;
+user-select: none;
+-webkit-user-select: none;
+}
+.credits {
+user-select: none;
+-webkit-user-select: none;
 }

@@ -194,7 +194,6 @@ loader.load '/models/stick2.js', (geometry, materials) ->
   danceReq = new XMLHttpRequest()
   danceReq.open 'GET', chofile, true
 
-  
   f = -> danceReq.send(); danceReq.onload = ->
     overlayText.textContent = 'Click to Play Demo, or Drag your own file in!'
     overlayElement.onclick = ->
