@@ -1,17 +1,18 @@
 "use strict"
 `define(['three'], function(three){return function(){`
+overlayElement = (document.getElementsByClassName 'overlay')[0]
 overlayText = (document.getElementsByClassName 'overlayText')[0]
 renderElement = (document.getElementsByClassName 'render')[0]
+audioElement = (document.getElementById 'demosong')
 
 cancelClick = ->
-  if document.onclick?
-    document.onclick = null
+  if overlayElement.onclick?
+    overlayElement.onclick = null
 
 latency = 0
 xspread = 32
 yspread = 40
 
-soundfile = '/she.mp3'
 chofile = '/she.cho'
 
 audio = new (window.AudioContext ? window.webkitAudioContext)()
@@ -63,7 +64,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     obj.animation?.stop()
     obj.animation = new three.Animation obj, anim
     obj.animation.timeScale = tempo / 120
-    obj.animation.currentTime += offset * 0.5 * tempo / 120
+    obj.animation.currentTime += 0.1 * Math.random()
     obj.animation.play()
   performance = null
 
@@ -71,13 +72,10 @@ loader.load '/models/stick2.js', (geometry, materials) ->
 
   class DancePerformance
     danceMoves: ['gangnam style', 'creepy crab', 'two step', 'Wave']
-    constructor: (data, @src) ->
-      @songStart = audio.currentTime + .1
-      @src.start @songStart
-
+    constructor: (data, @songStart, @stop) ->
       @gl = gl
 
-      @data = JSON.parse data
+      @data = data
       @actors = {}
       for target, pos of @data['starting_positions']
         @actors[target] = makeDude (Math.random() * 0xffffff),
@@ -146,12 +144,12 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       @gl.renderer.render @gl.scene, @gl.camera
       requestAnimationFrame (=> @render())
     remove: ->
+      @stop()
       for key, actor of @actors
         if actor.animation?
           actor.animation.stop()
           three.AnimationHandler.removeFromUpdate actor.animation
         @gl.scene.remove actor
-      @src.stop(0)
       @dead = true
 
   hover = (e) ->
@@ -179,10 +177,12 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       anaReq.responseType = 'json'
       anaReq.onload = ->
         overlayText.textContent = 'Choreography complete! Click to play!'
-        document.onclick = ->
+        overlayElement.onclick = ->
           overlayText.textContent = ''
           performance?.remove()
-          performance = new DancePerformance anaReq.response, src
+          songStart = audio.currentTime + .1
+          src.start(songStart)
+          performance = new DancePerformance anaReq.response, songStart, (-> src.stop(0))
           anaReq = null
           cancelClick()
       anaReq.onerror = ->
@@ -191,28 +191,25 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       delete reader.onload
     reader.readAsArrayBuffer e.dataTransfer.files[0]
 
-  req = new XMLHttpRequest()
-  req.open 'GET', soundfile, true
-  req.responseType = 'arraybuffer'
+  danceReq = new XMLHttpRequest()
+  danceReq.open 'GET', chofile, true
 
-  req.send()
-  req.onload = ->
-    audio.decodeAudioData req.response, (buff) ->
-      danceReq = new XMLHttpRequest()
-      danceReq.open 'GET', chofile, true
+  
+  f = -> danceReq.send(); danceReq.onload = ->
+    overlayText.textContent = 'Click to Play Demo, or Drag your own file in!'
+    overlayElement.onclick = ->
+      overlayText.textContent = ''
 
-      danceReq.send()
-      danceReq.onload = ->
-        overlayText.textContent = 'Click to Play Demo, or Drag your own file in!'
-        document.onclick = ->
-          overlayText.textContent = ''
+      src = audio.createMediaElementSource(audioElement)
+      src.connect audio.destination
 
-          src = audio.createBufferSource()
-          src.buffer = buff
-          src.connect audio.destination
+      songStart = audio.currentTime + .1
+      window.setTimeout (-> audioElement.play()), 100
 
-          # start in 100ms!
-          performance?.remove()
-          performance = new DancePerformance danceReq.response, src
-          cancelClick()
+      # start in 100ms!
+      performance?.remove()
+      performance = new DancePerformance JSON.parse(danceReq.response), songStart, (-> audioElement.pause())
+      cancelClick()
+  # load for a few secs to make sure demo song is cached...
+  window.setTimeout (-> f()), 2000
 `};});`
