@@ -22,11 +22,23 @@ app.post '/analyze', (req, res) ->
       if errored
         console.log 'error, so no analysis'
         return
-      console.log 'analyzing', path
-      analyzer = child.spawn "#{process.cwd()}/server-analyze.sh", [path], 'inherit'
-      analyzer.stdout.pipe res
-      analyzer.on 'exit', (code) ->
-        console.log 'done', code
+      tmp.file (err, path2, fd2) ->
+        analysis = fs.createWriteStream path2
+        console.log 'analyzing', path, ' to ', path2
+        analyzer = child.spawn "#{process.cwd()}/server-analyze.sh", [path], 'inherit'
+        analyzer.stdout.pipe analysis
+        analyzer.on 'exit', (code) ->
+          fs.unlink path
+          console.log 'done', code
+          if code isnt 0
+            res.send 500
+            fs.unlink path2
+            return
+
+          res.statusCode = 200
+          analysis = fs.createReadStream path2
+          analysis.pipe res
+          analysis.on 'end', -> fs.unlink path2
 
 
 app.use express.static(

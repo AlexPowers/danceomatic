@@ -1,5 +1,3 @@
-no glitching between dances!
-
 dancimations:
 cabbage patch
 travolta disco
@@ -11,4 +9,4 @@ twerking
 shuffle
 skanking
 
-server: delete uploaded file
+server: delete uploaded file before server crashes
