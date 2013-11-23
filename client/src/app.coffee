@@ -165,7 +165,7 @@ loader.load '/models/stick2.js', (geometry, materials) ->
     overlayText.textContent = 'Decoding audio file..'
     hover e
     reader = new window.FileReader()
-    reader.onload = -> audio.decodeAudioData reader.result, (buff) ->
+    decodeSuccess = (buff) ->
       overlayText.textContent = 'Creating choreography (this will take a few minutes)...'
       src = audio.createBufferSource()
       src.buffer = buff
@@ -188,7 +188,9 @@ loader.load '/models/stick2.js', (geometry, materials) ->
       anaReq.onerror = ->
         overlayText.textContent = 'Oops! Choreography failed! Try Again!'
       anaReq.send reader.result
-      delete reader.onload
+      delete reader.onload 
+    reader.onload = -> audio.decodeAudioData reader.result, decodeSuccess, ->
+      overlayText.textContent = 'Decoding audio file failed!'
     reader.readAsArrayBuffer e.dataTransfer.files[0]
 
   danceReq = new XMLHttpRequest()
